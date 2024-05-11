@@ -1,4 +1,4 @@
-# Mirror Mirror - 
+# Mirror Mirror
 An Inifinity Mirror App in pure HTML / Javascript
 
 ## Description
