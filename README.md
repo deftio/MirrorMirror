@@ -16,16 +16,32 @@ To run this application locally:
 1. **Clone the Repository**
    - Use Git to clone the repository to your local machine:
      ```
-     git clone [URL-to-repository]
+     git clone https://github.com/deftio/MirrorMirror
      ```
    - Navigate into the repository directory:
      ```
-     cd [repository-name]
+     cd MirrorMirror
      ```
 
 2. **Open in a Web Browser**
    - Open the `index.html` file in a modern web browser that supports the HTML5 video element and canvas API.
+
    - You can do this by right-clicking the file and selecting "Open with" and choosing your browser, or by dragging the file into an open browser window.
+
+alternatively run a local server such as:
+
+```bash
+npx serve 
+```
+open a browser and go to localhost:3000
+
+or
+
+```bash
+python -m http.server 3000
+```
+open a browser and go to localhost:3000
+
 
 3. **Grant Permissions**
    - When you run the application for the first time, your browser will ask for permissions to access the webcam. Make sure to allow this to enable the video functionalities.
