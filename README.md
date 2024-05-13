@@ -1,7 +1,7 @@
 # Mirror Mirror
 An Inifinity Mirror App in pure HTML / Javascript
 
-Live Demo here: (Mirror Demo)[https://deftio.github.io/MirrorMirror/]
+Live Demo here: [Mirror Demo](https://deftio.github.io/MirrorMirror/)
 
 ## Description
 This app creates an infinity mirror effect using the browser webcam. It includes functionalities such as flipping the video feed horizontally, applying an infinity mirror effect, rotating the image, and saving the current view as an image file. The project leverages HTML, CSS, and JavaScript with Bootstrap for styling, and it operates entirely in the browser using the WebRTC API for real-time video processing.
