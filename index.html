@@ -2,25 +2,64 @@
 <html lang="en">
 <!-- Mirror Mirror a single page javascript web camera app by deftio -->
 <!-- See github.com/deftio/MirrorMirror for more information -->
+
 <head>
     <meta charset="UTF-8">
     <title>Mirror Mirror...</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; background: black; }
-        .controls { width: 100%; text-align: center; z-index: 10; position: fixed; top: 0; padding: 20px 0; background: rgba(0, 0, 0, 0.8); }
-        .title { color: white; font-size: 24px; }
-        #canvas-container { width: 100%; height: calc(100% - 70px); display: flex; justify-content: center; align-items: center; margin-top: 70px; overflow: hidden; }
-        canvas { max-width: 100%; max-height: 100%; }
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: black;
+        }
+
+        .controls {
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            position: fixed;
+            top: 0;
+            padding: 20px 0;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .title {
+            color: white;
+            font-size: 24px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: calc(100% - 70px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 70px;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
     </style>
 </head>
+
 <body>
     <div class="controls">
         <div class="title">Mirror Mirror</div>
         <div class="btn-group" role="group">
             <button id="btnToggle" class="btn btn-success">Turn On</button>
-            <button id="btnFlip" class="btn btn-primary">Flip Horizontal</button>
             <button id="btnEffect" class="btn btn-warning">Infinity Effect</button>
+            <button id="btnEdge" class="btn btn-dark">Edge Detection</button>
+            <button id="btnFlip" class="btn btn-primary">Flip Horizontal</button>
             <button id="btnRotate" class="btn btn-secondary">Rotate</button>
             <button id="btnSave" class="btn btn-info">Save Picture</button>
         </div>
@@ -29,7 +68,7 @@
         <canvas id="canvas"></canvas>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const canvas = document.getElementById('canvas');
             const context = canvas.getContext('2d');
             let videoStream = null;
@@ -37,14 +76,21 @@
             let flipHorizontal = false;
             let infinityEffect = false;
             let rotationAngle = 0;
+            let edgeDetectionEnabled = false;
+
 
             const btnToggle = document.getElementById('btnToggle');
             const btnFlip = document.getElementById('btnFlip');
             const btnEffect = document.getElementById('btnEffect');
+
             const btnRotate = document.getElementById('btnRotate');
             const btnSave = document.getElementById('btnSave');
+            document.getElementById('btnEdge').addEventListener('click', function () {
+                edgeDetectionEnabled = !edgeDetectionEnabled;
+            });
 
-            btnToggle.addEventListener('click', function() {
+
+            btnToggle.addEventListener('click', function () {
                 if (videoStream) {
                     videoStream.getTracks().forEach(track => track.stop());
                     videoStream = null;
@@ -66,20 +112,20 @@
                 }
             });
 
-            btnFlip.addEventListener('click', function() {
+            btnFlip.addEventListener('click', function () {
                 flipHorizontal = !flipHorizontal;
             });
 
-            btnEffect.addEventListener('click', function() {
+            btnEffect.addEventListener('click', function () {
                 infinityEffect = !infinityEffect;
             });
 
-            btnRotate.addEventListener('click', function() {
+            btnRotate.addEventListener('click', function () {
                 rotationAngle = (rotationAngle + 90) % 360;
                 canvas.style.transform = `rotate(${rotationAngle}deg)`;
             });
 
-            btnSave.addEventListener('click', function() {
+            btnSave.addEventListener('click', function () {
                 if (canvas) {
                     const link = document.createElement('a');
                     link.download = 'infinity-mirror.png';
@@ -106,6 +152,9 @@
                     applyInfinityEffect(context, canvas.width, canvas.height);
                 }
 
+                if (edgeDetectionEnabled) {
+                    applyEdgeDetection(context, canvas.width, canvas.height);
+                }
                 requestAnimationFrame(draw);
             }
 
@@ -126,7 +175,67 @@
 
                 context.globalAlpha = 1.0;
             }
+
+
+            function applyEdgeDetection(context, width, height) {
+                const imageData = context.getImageData(0, 0, width, height);
+                const grayScaled = grayscale(imageData.data, width, height);
+                const edgeData = sobelFilter(grayScaled, width, height);
+                context.putImageData(new ImageData(edgeData, width, height), 0, 0);
+            }
+
+            function grayscale(data, width, height) {
+                const result = new Uint8ClampedArray(width * height * 4);
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+                    result[i] = avg; // red
+                    result[i + 1] = avg; // green
+                    result[i + 2] = avg; // blue
+                    result[i + 3] = 255; // alpha
+                }
+                return result;
+            }
+
+
+            function sobelFilter(data, width, height) {
+                const kernelX = [
+                    [-1, 0, 1],
+                    [-2, 0, 2],
+                    [-1, 0, 1]
+                ];
+                const kernelY = [
+                    [-1, -2, -1],
+                    [0, 0, 0],
+                    [1, 2, 1]
+                ];
+
+                const sobelData = new Uint8ClampedArray(width * height * 4); // Correctly sized array
+
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let px = (y * width + x) * 4;
+                        let gx = 0;
+                        let gy = 0;
+
+                        for (let cy = -1; cy <= 1; cy++) {
+                            for (let cx = -1; cx <= 1; cx++) {
+                                const cpx = ((y + cy) * width + (x + cx)) * 4;
+                                gx += data[cpx] * kernelX[cy + 1][cx + 1];
+                                gy += data[cpx] * kernelY[cy + 1][cx + 1];
+                            }
+                        }
+
+                        const magnitude = Math.sqrt(gx * gx + gy * gy);
+                        sobelData[px] = sobelData[px + 1] = sobelData[px + 2] = magnitude;
+                        sobelData[px + 3] = 255; // alpha
+                    }
+                }
+                return sobelData;
+            }
+
+
         });
     </script>
 </body>
+
 </html>
