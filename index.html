@@ -58,7 +58,8 @@
         <div class="btn-group" role="group">
             <button id="btnToggle" class="btn btn-success">Turn On</button>
             <button id="btnEffect" class="btn btn-warning">Infinity Effect</button>
-            <button id="btnEdge" class="btn btn-dark">Edge Detection</button>
+            <button id="btnEdge" class="btn btn-dark">Sobel Edge Detect</button>
+            <button id="btnCanny" class="btn btn-light">Canny Edge Detect</button>
             <button id="btnFlip" class="btn btn-primary">Flip Horizontal</button>
             <button id="btnRotate" class="btn btn-secondary">Rotate</button>
             <button id="btnSave" class="btn btn-info">Save Picture</button>
@@ -77,18 +78,27 @@
             let infinityEffect = false;
             let rotationAngle = 0;
             let edgeDetectionEnabled = false;
-
+            let cannyEdgeDetectionEnabled = false;
 
             const btnToggle = document.getElementById('btnToggle');
             const btnFlip = document.getElementById('btnFlip');
             const btnEffect = document.getElementById('btnEffect');
-
             const btnRotate = document.getElementById('btnRotate');
             const btnSave = document.getElementById('btnSave');
+
             document.getElementById('btnEdge').addEventListener('click', function () {
                 edgeDetectionEnabled = !edgeDetectionEnabled;
+                if (edgeDetectionEnabled) {
+                    cannyEdgeDetectionEnabled = false; // Disable Canny if Edge Detection is enabled
+                }
             });
 
+            document.getElementById('btnCanny').addEventListener('click', function () {
+                cannyEdgeDetectionEnabled = !cannyEdgeDetectionEnabled;
+                if (cannyEdgeDetectionEnabled) {
+                    edgeDetectionEnabled = false; // Disable Edge Detection if Canny is enabled
+                }
+            });
 
             btnToggle.addEventListener('click', function () {
                 if (videoStream) {
@@ -155,6 +165,11 @@
                 if (edgeDetectionEnabled) {
                     applyEdgeDetection(context, canvas.width, canvas.height);
                 }
+
+                if (cannyEdgeDetectionEnabled) {
+                    applyCannyEdgeDetection(context, canvas.width, canvas.height);
+                }
+
                 requestAnimationFrame(draw);
             }
 
@@ -176,11 +191,18 @@
                 context.globalAlpha = 1.0;
             }
 
-
             function applyEdgeDetection(context, width, height) {
                 const imageData = context.getImageData(0, 0, width, height);
                 const grayScaled = grayscale(imageData.data, width, height);
                 const edgeData = sobelFilter(grayScaled, width, height);
+                context.putImageData(new ImageData(edgeData, width, height), 0, 0);
+            }
+
+            function applyCannyEdgeDetection(context, width, height) {
+                const imageData = context.getImageData(0, 0, width, height);
+                const grayScaled = grayscale(imageData.data, width, height);
+                const blurred = gaussianBlur(grayScaled, width, height);
+                const edgeData = cannyFilter(blurred, width, height);
                 context.putImageData(new ImageData(edgeData, width, height), 0, 0);
             }
 
@@ -196,6 +218,57 @@
                 return result;
             }
 
+            function gaussianBlur(data, width, height) {
+                const kernel = [
+                    [1, 2, 1],
+                    [2, 4, 2],
+                    [1, 2, 1]
+                ];
+                const kernelWeight = 16;
+                const blurredData = new Uint8ClampedArray(width * height * 4);
+
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let sum = 0;
+                        let sumAlpha = 0;
+
+                        for (let cy = -1; cy <= 1; cy++) {
+                            for (let cx = -1; cx <= 1; cx++) {
+                                const pixel = ((y + cy) * width + (x + cx)) * 4;
+                                const weight = kernel[cy + 1][cx + 1];
+                                sum += data[pixel] * weight;
+                                sumAlpha += data[pixel + 3];
+                            }
+                        }
+
+                        const pixelIndex = (y * width + x) * 4;
+                        blurredData[pixelIndex] = sum / kernelWeight;
+                        blurredData[pixelIndex + 1] = sum / kernelWeight;
+                        blurredData[pixelIndex + 2] = sum / kernelWeight;
+                        blurredData[pixelIndex + 3] = sumAlpha / kernelWeight;
+                    }
+                }
+                return blurredData;
+            }
+
+            function cannyFilter(data, width, height) {
+                // Simplified Canny edge detection
+                const sobelData = sobelFilter(data, width, height);
+                const result = new Uint8ClampedArray(width * height * 4);
+
+                for (let i = 0; i < sobelData.length; i += 4) {
+                    const magnitude = sobelData[i];
+                    if (magnitude > 50) {
+                        result[i] = result[i + 1] = result[i + 2] = 255; // white
+                        result[i + 3] = 255; // alpha
+                    } else {
+                        result[i] = result[i + 1] = result[i + 2] = 0; // black
+                        result[i + 3] = 255; // alpha
+                    }
+                }
+
+                return result;
+            }
 
             function sobelFilter(data, width, height) {
                 const kernelX = [
@@ -209,7 +282,7 @@
                     [1, 2, 1]
                 ];
 
-                const sobelData = new Uint8ClampedArray(width * height * 4); // Correctly sized array
+                const sobelData = new Uint8ClampedArray(width * height * 4);
 
                 for (let y = 1; y < height - 1; y++) {
                     for (let x = 1; x < width - 1; x++) {
@@ -232,8 +305,6 @@
                 }
                 return sobelData;
             }
-
-
         });
     </script>
 </body>

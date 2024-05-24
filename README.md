@@ -10,7 +10,8 @@ This app creates an infinity mirror effect using the browser webcam. It includes
 - **Camera Control**: Turn the webcam on or off.
 - **Flip Horizontal**: Toggle the horizontal flipping of the video feed.
 - **Infinity Effect**: Apply an infinity mirror effect to the video feed.
-- **Edge Detection**: Show outlines of all the edges of the stream using a Sobel Filter
+- **Sobel Edge Detection**: Show outlines of all the edges of the stream using a Sobel Detection Filter
+- **Canny Edge Detection**: Show outlines of all the edges of the stream using a Canny Edge Detection Filter
 - **Rotate**: Rotate the video feed by 90 degrees with each button press.
 - **Save Image**: Save the current view as a PNG file.
 
